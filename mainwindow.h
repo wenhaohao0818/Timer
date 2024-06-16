@@ -6,6 +6,10 @@
 #include <QPushButton>
 #include <QDebug>
 #include <QElapsedTimer>
+#include <QStringList>
+#include <QString>
+#include <QHeaderView>
+#pragma execution_character_set("utf-8")
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -37,8 +41,9 @@ private:
     int timer_id = 0;
     int clock_time = 0;
     int pause_time = 0;
+    int ranking = 0;
     bool pause_flag = true;
     unsigned int pause_time_tmp = 0;
-
+    int lastCountTime = 0.0;
 };
 #endif // MAINWINDOW_H

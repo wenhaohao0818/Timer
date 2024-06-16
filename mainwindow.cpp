@@ -24,7 +24,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(timer, &QTimer::timeout, this, &MainWindow::onTimeout);
 
     check_button_status();
-    ui->tableWidget->setColumnCount(2);
+    QStringList headers = {QString("计次"),QString("时间"),QString("差值")};
+    ui->tableWidget->setColumnCount(headers.length());
+    ui->tableWidget->setHorizontalHeaderLabels(headers);
+    ui->tableWidget->verticalHeader()->setVisible(false);
+    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableWidget->setRowCount(0);
+    //让tableWidget内容中的每个元素居中
+    ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);//设置整行选中
 }
 
 MainWindow::~MainWindow()
@@ -40,9 +48,17 @@ void MainWindow::time_reset()
     clock_time = 0;
     pause_time = 0;
     pause_time_tmp = 0;
+    ranking = 0;
+    lastCountTime = 0;
     pause_flag = true;
     timer_status_run = false;
     ui->lcdNumber->display(QString("00:00:00.000"));
+    ui->tableWidget->clear();
+    ui->tableWidget->setRowCount(0);
+    QStringList headers = {QString("计次"),QString("时间"),QString("差值")};
+    ui->tableWidget->setHorizontalHeaderLabels(headers);
+    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     check_button_status();
 }
 
@@ -63,11 +79,24 @@ void MainWindow::time_start()
 void MainWindow::time_counts()
 {
     qDebug()<<QString::fromLocal8Bit ("timer counts")<<endl;
-    QTime difftime = QTime(0,0,0).addMSecs(clock_time-pause_time);
-    qDebug()<<difftime.toString("hh:mm:ss.zzz")<<endl;
+    ranking++;
+    QTime nowtime = QTime(0,0,0).addMSecs(clock_time-pause_time);
+    qDebug()<<nowtime.toString("hh:mm:ss.zzz")<<endl;
     ui->tableWidget->insertRow(0);
-    QTableWidgetItem *it = new QTableWidgetItem(difftime.toString("hh:mm:ss.zzz"));
+    QTableWidgetItem *it = new QTableWidgetItem(nowtime.toString("hh:mm:ss.zzz"));
+    QTime difftime = QTime(0,0,0).addMSecs(-nowtime.msecsTo(QTime(0,0,0)) - lastCountTime);
+    lastCountTime = -nowtime.msecsTo(QTime(0,0,0));
+    ui->tableWidget->setItem(0, 0, new QTableWidgetItem(QString::number(ranking)));
     ui->tableWidget->setItem(0, 1, it);
+    ui->tableWidget->setItem(0, 2, new QTableWidgetItem(difftime.toString("+hh:mm:ss.zzz")));
+    ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);//设置整行选中
+    for (int i=0;i<ui->tableWidget->rowCount();i++)
+       {
+           for (int j=0;j<ui->tableWidget->columnCount();j++)
+           {
+               ui->tableWidget->item(i,j)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+           }
+       }
 }
 
 void MainWindow::time_pause()
@@ -79,7 +108,7 @@ void MainWindow::time_pause()
         timer->stop();
         pause_time_tmp = elapsedTimer.elapsed();
     }else{
-        timer->start(100);
+        timer->start(10);
         pause_time_tmp = elapsedTimer.elapsed() - pause_time_tmp;
         pause_time += pause_time_tmp;
         qDebug()<<QString::fromLocal8Bit ("timer pause")<<pause_time<<endl;
